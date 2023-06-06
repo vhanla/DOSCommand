@@ -332,6 +332,7 @@ type
     destructor Destroy; override;
     procedure Execute; // the user call this to execute the command
     procedure SendLine(const AValue: string; AEol: Boolean); // add a line in the input pipe
+    procedure SigInt; // a.k.a. Ctrl+C
     procedure Stop; // the user can stop the process with this method, stops process and waits
     property EndStatus: TEndStatus read get_EndStatus;
     property ExitCode: Cardinal read FExitCode;
@@ -1110,6 +1111,19 @@ begin
     FOnCharEncoding := AValue
   else
     raise EDosCommand.CreateRes(@SStillRunning);
+end;
+
+procedure TDosCommand.SigInt;
+begin
+  FreeConsole;
+  if AttachConsole(ProcessInformation.dwProcessId) then
+  begin
+    SetConsoleCtrlHandler(nil, True);
+    GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
+    FreeConsole;
+    Sleep(200);
+    SetConsoleCtrlHandler(nil, False);
+  end;
 end;
 
 procedure TDosCommand.Stop;
